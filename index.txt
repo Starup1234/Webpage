@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>File Viewer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h2>Upload a file (PDF, TXT, XLSX)</h2>
+  <input type="file" id="fileInput" />
+  <div id="output"></div>
+
+  <script>
+    document.getElementById('fileInput').addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      const output = document.getElementById('output');
+      output.innerHTML = "";
+
+      if (!file) return;
+
+      const reader = new FileReader();
+      const extension = file.name.split('.').pop().toLowerCase();
+
+      if (extension === 'txt') {
+        reader.onload = function (e) {
+          const text = e.target.result;
+          const rows = text.split('\n');
+          let html = '<table>';
+          rows.forEach(row => {
+            html += `<tr><td>${row.replace(/\t/g, '</td><td>')}</td></tr>`;
+          });
+          html += '</table>';
+          output.innerHTML = html;
+        };
+        reader.readAsText(file);
+
+      } else if (extension === 'xlsx' || extension === 'xls') {
+        reader.onload = function (e) {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const html = XLSX.utils.sheet_to_html(sheet);
+          output.innerHTML = html;
+        };
+        reader.readAsArrayBuffer(file);
+
+      } else if (extension === 'pdf') {
+        output.innerHTML = `<p>PDF support is limited. Please open the file in a PDF viewer.</p>`;
+      } else {
+        output.innerHTML = '<p>Unsupported file type.</p>';
+      }
+    });
+  </script>
+</body>
+</html>
